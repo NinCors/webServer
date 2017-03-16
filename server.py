@@ -1,12 +1,12 @@
 import BaseHTTPServer
 
-class requestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+class RequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     '''
         Handle the request and return page
     '''
 
     # build the page model
-    page = '''\
+    Page = '''\
         <html>
         <body>
         <p>Hello,wwwworlllld!!!</p>
