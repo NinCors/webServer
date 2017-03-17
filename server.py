@@ -1,10 +1,39 @@
 import BaseHTTPServer,sys,os
 
+# cases: file not exited
+class case_no_file(object):
+    def test(self, handler):
+        return not os.path.exists(handler.full_path)
 
-# possible cases
-cases = [case_no_file(),
-        case_exostomg_file(),
-        case_fail()]
+    def act(self, handler):
+        raise ServerException("'{0}' not found".format(handler.path))
+
+# cases: the path is file
+class case_existing_file(object):
+    def test(self, handler):
+        return os.path.isfile(handler.full_path)
+
+    def act(self, handler):
+        handler.handle_file(handler.full_path)
+
+# cases: no given file, display home page
+class case_home_page(object):
+    def index_path(self, handler):
+        return os.path.join(handler.full_path,'index.html')
+
+    # check if the index file existed
+    def test(self, handler):
+        return os.path.isdir(handler.full_path) and os.path.isfile(self.index_path(handler))
+
+    def act(self, handler):
+        handler.handle_file(self.index_path(handler))
+
+# cases: else
+class case_fail(object):
+    def test(self, handler):
+        return True
+    def act(self, handler):
+        raise ServerException()
 
 # error handler
 class ServerException(Exception):
@@ -25,18 +54,21 @@ class RequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         </html>
         '''
 
+    # cases
+    cases = [case_no_file(),
+        case_existing_file(),
+        case_home_page(),
+        case_fail()]
+
     # The get request
     def do_GET(self):
         try:
-            full_path = os.getcwd() + self.path
-            if not os.path.exists(full_path):
-                raise ServerException("'{0}' not found".format(self.path))
-
-            elif os.path.isfile(full_path):
-                self.handle_file(full_path)
-
-            else:
-                raise ServerException("Unkown object '{0}'".format(self.path))
+            self.full_path = os.getcwd() + self.path
+            # find the right cases
+            for case in self.cases:
+                if case.test(self):
+                    case.act(self)
+                    break
 
         except Exception as msg:
             self.handle_error(msg)
@@ -72,35 +104,6 @@ class RequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.send_header("Content-Length",str(len(page)))
         self.end_headers()
         self.wfile.write(page)        
-
-
-# cases: file not exited
-class case_no_file(object):
-    def test(self,handler):
-        return not os.path.exists(handler.full_path)
-
-    def act(self.handler):
-        raise ServerException("'{0}' not found".format(handler.path))
-
-
-# cases: the path is file
-class case_existing_file(object):
-    def test(self,handler):
-        return os.path.isfile(handler.full_path)
-
-    def act(self, handler):
-        handler.handle_file(handler.full_path)
-
-# cases: else
-class case_fail(object):
-    def test(self, handler):
-        return True
-    def act(self,handler):
-        raise ServerException()
-
-
-
-
 
 if __name__ == '__main__':
     serverAddress = ('', 8080)
