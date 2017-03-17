@@ -1,5 +1,15 @@
 import BaseHTTPServer,sys,os
 
+
+# possible cases
+cases = [case_no_file(),
+        case_exostomg_file(),
+        case_fail()]
+
+# error handler
+class ServerException(Exception):
+    pass
+
 class RequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     '''
         Handle the request and return page,inherit from BaseHTTPRequestHandler.
@@ -63,9 +73,32 @@ class RequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(page)        
 
-# error handler
-class ServerException(Exception):
-    pass
+
+# cases: file not exited
+class case_no_file(object):
+    def test(self,handler):
+        return not os.path.exists(handler.full_path)
+
+    def act(self.handler):
+        raise ServerException("'{0}' not found".format(handler.path))
+
+
+# cases: the path is file
+class case_existing_file(object):
+    def test(self,handler):
+        return os.path.isfile(handler.full_path)
+
+    def act(self, handler):
+        handler.handle_file(handler.full_path)
+
+# cases: else
+class case_fail(object):
+    def test(self, handler):
+        return True
+    def act(self,handler):
+        raise ServerException()
+
+
 
 
 
