@@ -1,4 +1,4 @@
-import BaseHTTPServer,sys,os
+import BaseHTTPServer,sys,os,subprocess
 
 # cases: file not exited
 class case_no_file(object):
@@ -28,6 +28,20 @@ class case_home_page(object):
     def act(self, handler):
         handler.handle_file(self.index_path(handler))
 
+# cases: script cgi file
+class case_cgi_file(object):
+    # cgi function
+    def run_cgi(self, handler):
+        data = subprocess.check_output(['python',handler.full_path])
+        handler.send_content(data)
+
+    def test(self, handler):
+        return os.path.isfile(handler.full_path) and handler.full_path.endswith('.py')
+
+    def act(self, handler):
+        self.run_cgi(handler.full_path)
+
+
 # cases: else
 class case_fail(object):
     def test(self, handler):
@@ -35,16 +49,18 @@ class case_fail(object):
     def act(self, handler):
         raise ServerException()
 
-# error handler
+# error exception
 class ServerException(Exception):
     pass
+
+
 
 class RequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     '''
         Handle the request and return page,inherit from BaseHTTPRequestHandler.
     '''
 
-    # build the page 
+    # build the error page 
     Error_Page = '''\
         <html>
             <body>
@@ -56,6 +72,7 @@ class RequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     # cases
     cases = [case_no_file(),
+        case_cgi_file(),
         case_existing_file(),
         case_home_page(),
         case_fail()]
